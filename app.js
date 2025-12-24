@@ -201,7 +201,7 @@ async function sendFriendRequest(toUserId) {
         }
     }
 
-    async acceptFriendRequest(requestId) {
+    async function acceptFriendRequest(requestId) {
         const { error } = await supabase
             .from('friend_requests')
             .update({ status: 'accepted' })
