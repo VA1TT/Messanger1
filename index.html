@@ -12,53 +12,78 @@
 <body>
     <div class="container">
         <div class="auth-section" id="authSection">
-            <h1>Simple Messenger</h1>
-            <div id="loginForm">
-                <h2>Вход/Регистрация</h2>
-                <input type="text" id="username" placeholder="Имя пользователя" required>
-                <input type="password" id="password" placeholder="Пароль" required>
-                <button onclick="login()">Войти</button>
-                <button onclick="signup()">Зарегистрироваться</button>
+            <h1>📱 Simple Messenger</h1>
+            <div class="auth-container" id="loginForm">
+                <h2 id="authTitle">Вход</h2>
+                
+                <div class="auth-error" id="authError" style="display: none;"></div>
+                
+                <div class="form-group">
+                    <label for="username">Имя пользователя</label>
+                    <input type="text" id="username" placeholder="Введите имя пользователя" required>
+                </div>
+                
+                <div class="form-group" id="emailGroup" style="display: none;">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="Введите email">
+                    <small id="authNote" style="display: none; color: #666; margin-top: 5px;">
+                        Для регистрации требуется email
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Пароль</label>
+                    <input type="password" id="password" placeholder="Введите пароль" required>
+                </div>
+                
+                <div class="auth-buttons">
+                    <button id="submitAuthBtn" class="btn-primary">Войти</button>
+                    <button id="toggleAuthBtn" class="btn-secondary">Нет аккаунта? Зарегистрироваться</button>
+                </div>
             </div>
         </div>
 
         <div class="main-section" id="mainSection" style="display: none;">
             <div class="sidebar">
                 <div class="user-info">
-                    <h3 id="currentUsername"></h3>
-                    <button onclick="logout()">Выйти</button>
+                    <h3>👤 <span id="currentUsername"></span></h3>
+                    <button onclick="logout()" class="btn-logout">Выйти</button>
                 </div>
                 <div class="users-list">
-                    <h3>Пользователи онлайн</h3>
+                    <h3>🟢 Онлайн</h3>
                     <ul id="onlineUsers"></ul>
                 </div>
             </div>
 
             <div class="chat-section">
                 <div class="chat-header">
-                    <h3 id="chatWithUser">Выберите пользователя</h3>
+                    <h3 id="chatWithUser">Выберите пользователя для начала общения</h3>
                     <div class="call-controls">
-                        <button id="callBtn" onclick="startCall()" disabled>📞 Позвонить</button>
-                        <button id="hangupBtn" onclick="hangUp()" disabled>📞 Завершить</button>
+                        <button id="callBtn" class="btn-call">📞 Позвонить</button>
+                        <button id="hangupBtn" class="btn-hangup" style="display: none;">📞 Завершить</button>
                     </div>
                 </div>
 
-                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="welcome-message">
+                        <p>Выберите пользователя из списка слева, чтобы начать общение</p>
+                    </div>
+                </div>
 
                 <div class="message-input">
                     <input type="text" id="messageInput" placeholder="Введите сообщение..." disabled>
-                    <button onclick="sendMessage()" disabled id="sendBtn">Отправить</button>
+                    <button id="sendBtn" class="btn-send" disabled>Отправить</button>
                 </div>
             </div>
 
-            <div class="call-section">
+            <div class="call-section" style="display: none;">
                 <div class="video-container">
                     <video id="localVideo" autoplay muted playsinline></video>
                     <video id="remoteVideo" autoplay playsinline></video>
                 </div>
                 <div class="call-controls">
-                    <button id="muteBtn" onclick="toggleMute()">🔇 Выключить звук</button>
-                    <button id="videoBtn" onclick="toggleVideo()">📹 Выключить видео</button>
+                    <button id="muteBtn" class="btn-control">🔇 Выключить звук</button>
+                    <button id="videoBtn" class="btn-control">📹 Выключить видео</button>
                 </div>
             </div>
         </div>
