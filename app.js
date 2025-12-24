@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
     // Друзья
-    async sendFriendRequest(toUserId) {
+async function sendFriendRequest(toUserId) {
         const { error } = await supabase
             .from('friend_requests')
             .insert({
