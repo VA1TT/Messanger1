@@ -186,21 +186,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-    // Друзья
-async function sendFriendRequest(toUserId) {
-        const { error } = await supabase
-            .from('friend_requests')
-            .insert({
-                from_user: this.currentUser.id,
-                to_user: toUserId,
-                status: 'pending'
-            });
-
-        if (!error) {
-            this.showNotification('Запрос в друзья отправлен', 'success');
-        }
-    }
-
     // Чат
     async sendMessage(content, file = null) {
         if (!this.selectedChat || (!content && !file)) return;
