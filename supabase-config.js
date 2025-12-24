@@ -1,6 +1,6 @@
 // Конфигурация Supabase
-const SUPABASE_URL = 'https://your-project.supabase.co';
-const SUPABASE_ANON_KEY = 'your-anon-key';
+const SUPABASE_URL = 'https://frkmacxtiwbpnxmaofxq.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_rkaKOLf0E-2quUUztk84Fw_Y7esr1yJ';
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
