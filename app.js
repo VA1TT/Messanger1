@@ -1,13 +1,93 @@
 // Основной файл приложения
 let onlineUsers = new Map();
+let authState = 'login'; // 'login' или 'signup'
 
-// Функции аутентификации
-async function signup() {
-    const username = document.getElementById('username').value;
+// Переключение между логином и регистрацией
+function toggleAuthMode() {
+    const loginForm = document.getElementById('loginForm');
+    const toggleBtn = document.getElementById('toggleAuthBtn');
+    
+    if (authState === 'login') {
+        authState = 'signup';
+        document.getElementById('authTitle').textContent = 'Регистрация';
+        document.getElementById('submitAuthBtn').textContent = 'Зарегистрироваться';
+        toggleBtn.textContent = 'Уже есть аккаунт? Войти';
+        document.getElementById('authNote').style.display = 'block';
+    } else {
+        authState = 'login';
+        document.getElementById('authTitle').textContent = 'Вход';
+        document.getElementById('submitAuthBtn').textContent = 'Войти';
+        toggleBtn.textContent = 'Нет аккаунта? Зарегистрироваться';
+        document.getElementById('authNote').style.display = 'none';
+    }
+}
+
+// Основная функция аутентификации
+async function handleAuth() {
+    const username = document.getElementById('username').value.trim();
+    const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
+    const authError = document.getElementById('authError');
 
-    const { data, error } = await supabase.auth.signUp({
-        email: `${username}@messenger.com`,
+    // Очищаем предыдущие ошибки
+    authError.textContent = '';
+    authError.style.display = 'none';
+
+    // Валидация
+    if (!username || username.length < 3) {
+        showError('Имя пользователя должно быть не менее 3 символов');
+        return;
+    }
+
+    if (authState === 'signup' && !validateEmail(email)) {
+        showError('Введите корректный email');
+        return;
+    }
+
+    if (!password || password.length < 6) {
+        showError('Пароль должен быть не менее 6 символов');
+        return;
+    }
+
+    try {
+        if (authState === 'signup') {
+            await signup(username, email, password);
+        } else {
+            await login(username, password);
+        }
+    } catch (error) {
+        showError(error.message);
+    }
+}
+
+function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
+function showError(message) {
+    const authError = document.getElementById('authError');
+    authError.textContent = message;
+    authError.style.display = 'block';
+}
+
+async function signup(username, email, password) {
+    console.log('Регистрация:', { username, email });
+    
+    // Проверяем, существует ли пользователь с таким username
+    const { data: existingUser } = await supabase
+        .from('users')
+        .select('username')
+        .eq('username', username)
+        .single();
+
+    if (existingUser) {
+        throw new Error('Пользователь с таким именем уже существует');
+    }
+
+    // Регистрируем пользователя в Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email,
         password: password,
         options: {
             data: {
@@ -16,46 +96,91 @@ async function signup() {
         }
     });
 
-    if (error) {
-        alert('Ошибка регистрации: ' + error.message);
-        return;
+    if (authError) {
+        throw new Error('Ошибка регистрации: ' + authError.message);
     }
 
-    await login();
+    console.log('Пользователь зарегистрирован:', authData);
+    
+    if (authData.user) {
+        // Добавляем пользователя в таблицу users
+        const { error: dbError } = await supabase
+            .from('users')
+            .insert({
+                id: authData.user.id,
+                username: username,
+                email: email
+            });
+
+        if (dbError && !dbError.message.includes('duplicate key')) {
+            console.error('Ошибка добавления в базу:', dbError);
+        }
+
+        // Автоматически входим после регистрации
+        await login(username, password);
+    }
 }
 
-async function login() {
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
+async function login(username, password) {
+    console.log('Вход:', username);
+    
+    // Сначала проверяем, есть ли пользователь в нашей таблице
+    const { data: userData } = await supabase
+        .from('users')
+        .select('email')
+        .eq('username', username)
+        .single();
 
+    let loginEmail = userData?.email || `${username}@messenger.local`;
+
+    // Пробуем войти
     const { data, error } = await supabase.auth.signInWithPassword({
-        email: `${username}@messenger.com`,
+        email: loginEmail,
         password: password
     });
 
     if (error) {
-        alert('Ошибка входа: ' + error.message);
-        return;
+        // Если не получилось, пробуем с дефолтным email
+        if (loginEmail !== `${username}@messenger.local`) {
+            const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
+                email: `${username}@messenger.local`,
+                password: password
+            });
+            
+            if (retryError) {
+                throw new Error('Неверное имя пользователя или пароль');
+            }
+            
+            currentUser = {
+                id: retryData.user.id,
+                username: username,
+                email: retryData.user.email
+            };
+        } else {
+            throw new Error('Неверное имя пользователя или пароль');
+        }
+    } else {
+        currentUser = {
+            id: data.user.id,
+            username: data.user.user_metadata?.username || username,
+            email: data.user.email
+        };
     }
 
-    currentUser = {
-        id: data.user.id,
-        username: username
-    };
-
-    // Добавляем пользователя в базу
-    await supabase
-        .from('users')
-        .upsert({ id: currentUser.id, username: currentUser.username });
-
+    console.log('Вход выполнен:', currentUser);
     showMainApp();
     loadOnlineUsers();
     setupRealtime();
 }
 
 async function logout() {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+        console.error('Ошибка выхода:', error);
+    }
+    
     currentUser = null;
+    selectedUser = null;
     hideMainApp();
 }
 
@@ -69,6 +194,17 @@ function showMainApp() {
 function hideMainApp() {
     document.getElementById('authSection').style.display = 'flex';
     document.getElementById('mainSection').style.display = 'none';
+    
+    // Сбрасываем форму
+    document.getElementById('username').value = '';
+    document.getElementById('email').value = '';
+    document.getElementById('password').value = '';
+    document.getElementById('authError').style.display = 'none';
+    authState = 'login';
+    document.getElementById('authTitle').textContent = 'Вход';
+    document.getElementById('submitAuthBtn').textContent = 'Войти';
+    document.getElementById('toggleAuthBtn').textContent = 'Нет аккаунта? Зарегистрироваться';
+    document.getElementById('authNote').style.display = 'none';
 }
 
 // Работа с пользователями
@@ -171,7 +307,7 @@ async function sendMessage() {
 // Настройка realtime
 function setupRealtime() {
     // Подписка на новые сообщения
-    supabase
+    const channel = supabase
         .channel('messages')
         .on('postgres_changes', 
             { 
@@ -181,12 +317,46 @@ function setupRealtime() {
                 filter: `receiver_id=eq.${currentUser.id}`
             }, 
             (payload) => {
+                console.log('Новое сообщение:', payload);
                 if (selectedUser && payload.new.sender_id === selectedUser.id) {
                     loadMessages();
+                } else if (payload.new.sender_id !== currentUser.id) {
+                    // Уведомление о новом сообщении от другого пользователя
+                    showNotification(payload.new.sender_id);
                 }
             }
         )
         .subscribe();
+
+    // Подписка на изменения пользователей
+    supabase
+        .channel('online-users')
+        .on('postgres_changes',
+            {
+                event: '*',
+                schema: 'public',
+                table: 'users'
+            },
+            () => {
+                loadOnlineUsers();
+            }
+        )
+        .subscribe();
+}
+
+function showNotification(senderId) {
+    const sender = onlineUsers.get(senderId);
+    if (sender) {
+        if (Notification.permission === 'granted') {
+            new Notification(`Новое сообщение от ${sender.username}`);
+        } else if (Notification.permission !== 'denied') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    new Notification(`Новое сообщение от ${sender.username}`);
+                }
+            });
+        }
+    }
 }
 
 // WebRTC звонки
@@ -237,15 +407,31 @@ async function startCall() {
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
 
-        // Здесь должна быть логика отправки offer через ваш сервер
-        // Для упрощения используем alert для ручного обмена SDP
-        alert(`Отправьте этот SDP выбранному пользователю:\n\n${JSON.stringify(offer)}`);
+        // Отправляем offer через Supabase Realtime
+        const channel = supabase.channel(`call-${selectedUser.id}`);
 
-        // Кнопка для ввода ответа
-        const answerSDP = prompt('Введите SDP ответ от другого пользователя:');
-        if (answerSDP) {
-            await peerConnection.setRemoteDescription(JSON.parse(answerSDP));
-        }
+        channel.subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+                channel.send({
+                    type: 'broadcast',
+                    event: 'offer',
+                    payload: {
+                        from: currentUser.id,
+                        offer: offer
+                    }
+                });
+            }
+        });
+
+        // Ждем ответ
+        const { data } = await supabase
+            .channel(`call-${currentUser.id}`)
+            .on('broadcast', { event: 'answer' }, (payload) => {
+                if (payload.payload.from === selectedUser.id) {
+                    peerConnection.setRemoteDescription(payload.payload.answer);
+                }
+            })
+            .subscribe();
 
     } catch (error) {
         console.error('Ошибка начала звонка:', error);
@@ -295,12 +481,30 @@ function toggleVideo() {
     }
 }
 
-// Обработка нажатия Enter для отправки сообщения
-document.getElementById('messageInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        sendMessage();
-    }
-});
+// Обработчики событий
+function initEventListeners() {
+    // Отправка сообщения по Enter
+    document.getElementById('messageInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+    // Авторизация по Enter
+    document.getElementById('password').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleAuth();
+        }
+    });
+
+    // Инициализация кнопок
+    document.getElementById('submitAuthBtn').onclick = handleAuth;
+    document.getElementById('toggleAuthBtn').onclick = toggleAuthMode;
+    document.getElementById('callBtn').onclick = startCall;
+    document.getElementById('hangupBtn').onclick = hangUp;
+    document.getElementById('muteBtn').onclick = toggleMute;
+    document.getElementById('videoBtn').onclick = toggleVideo;
+}
 
 // Проверяем авторизацию при загрузке
 async function checkAuth() {
@@ -308,10 +512,21 @@ async function checkAuth() {
     
     if (session) {
         const { data: { user } } = await supabase.auth.getUser();
+        
+        // Получаем username из таблицы users
+        const { data: userData } = await supabase
+            .from('users')
+            .select('username')
+            .eq('id', user.id)
+            .single();
+
         currentUser = {
             id: user.id,
-            username: user.user_metadata?.username || user.email.split('@')[0]
+            username: userData?.username || user.email?.split('@')[0] || 'Пользователь',
+            email: user.email
         };
+
+        console.log('Автоматический вход:', currentUser);
         showMainApp();
         loadOnlineUsers();
         setupRealtime();
@@ -319,4 +534,12 @@ async function checkAuth() {
 }
 
 // Инициализация при загрузке
-window.onload = checkAuth;
+window.onload = function() {
+    initEventListeners();
+    checkAuth();
+    
+    // Запрашиваем разрешение на уведомления
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+};
