@@ -201,18 +201,6 @@ async function sendFriendRequest(toUserId) {
         }
     }
 
-    async function acceptFriendRequest(requestId) {
-        const { error } = await supabase
-            .from('friend_requests')
-            .update({ status: 'accepted' })
-            .eq('id', requestId);
-
-        if (!error) {
-            this.loadFriends();
-            this.showNotification('Запрос в друзья принят', 'success');
-        }
-    }
-
     // Чат
     async sendMessage(content, file = null) {
         if (!this.selectedChat || (!content && !file)) return;
