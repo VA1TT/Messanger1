@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Messenger</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js" defer></script>
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <div class="auth-section" id="authSection">
+            <h1>Simple Messenger</h1>
+            <div id="loginForm">
+                <h2>Вход/Регистрация</h2>
+                <input type="text" id="username" placeholder="Имя пользователя" required>
+                <input type="password" id="password" placeholder="Пароль" required>
+                <button onclick="login()">Войти</button>
+                <button onclick="signup()">Зарегистрироваться</button>
+            </div>
+        </div>
+
+        <div class="main-section" id="mainSection" style="display: none;">
+            <div class="sidebar">
+                <div class="user-info">
+                    <h3 id="currentUsername"></h3>
+                    <button onclick="logout()">Выйти</button>
+                </div>
+                <div class="users-list">
+                    <h3>Пользователи онлайн</h3>
+                    <ul id="onlineUsers"></ul>
+                </div>
+            </div>
+
+            <div class="chat-section">
+                <div class="chat-header">
+                    <h3 id="chatWithUser">Выберите пользователя</h3>
+                    <div class="call-controls">
+                        <button id="callBtn" onclick="startCall()" disabled>📞 Позвонить</button>
+                        <button id="hangupBtn" onclick="hangUp()" disabled>📞 Завершить</button>
+                    </div>
+                </div>
+
+                <div class="chat-messages" id="chatMessages"></div>
+
+                <div class="message-input">
+                    <input type="text" id="messageInput" placeholder="Введите сообщение..." disabled>
+                    <button onclick="sendMessage()" disabled id="sendBtn">Отправить</button>
+                </div>
+            </div>
+
+            <div class="call-section">
+                <div class="video-container">
+                    <video id="localVideo" autoplay muted playsinline></video>
+                    <video id="remoteVideo" autoplay playsinline></video>
+                </div>
+                <div class="call-controls">
+                    <button id="muteBtn" onclick="toggleMute()">🔇 Выключить звук</button>
+                    <button id="videoBtn" onclick="toggleVideo()">📹 Выключить видео</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
