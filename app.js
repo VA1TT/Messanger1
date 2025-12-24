@@ -1,105 +1,190 @@
 // Основной файл приложения Aqua Messenger
-class AquaMessenger {
-    constructor() {
-        this.currentUser = null;
-        this.selectedChat = null;
-        this.onlineUsers = new Map();
-        this.friends = new Map();
-        this.activeCall = null;
-        this.peerConnection = null;
-        this.localStream = null;
-        this.remoteStream = null;
-        this.callTimer = null;
-        this.callStartTime = null;
-        this.isSidebarExpanded = false;
-        
-        this.initialize();
-    }
 
 console.log('App starting...');
-console.log('Supabase URL:', window.supabaseClient.supabaseUrl);
+
+// Простые функции для демо
+function login() {
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
     
-    async initialize() {
-        await this.checkAuth();
-        this.setupEventListeners();
-        this.setupRealtime();
-        this.hidePreloader();
-        
-        if (this.currentUser) {
-            this.loadFriends();
-            this.loadChats();
-            this.loadVideoPosts();
-        }
+    if (!username || !password) {
+        showNotification('Заполните все поля', 'error');
+        return;
     }
+    
+    // Тестовый вход
+    window.currentUser = {
+        id: 'user-' + Date.now(),
+        username: username,
+        avatar_url: 'https://i.pravatar.cc/150?img=' + Math.floor(Math.random() * 70)
+    };
+    
+    document.getElementById('authSection').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'flex';
+    
+    // Сохраняем для обновления страницы
+    localStorage.setItem('demoUser', JSON.stringify(window.currentUser));
+    
+    showNotification('Вход выполнен успешно!', 'success');
+    initApp();
+}
 
-    async checkAuth() {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-            await this.loadUserProfile(session.user.id);
-            this.showApp();
-        } else {
-            this.showAuth();
-        }
+function register() {
+    const username = document.getElementById('registerUsername').value;
+    const email = document.getElementById('registerEmail').value;
+    const password = document.getElementById('registerPassword').value;
+    const confirm = document.getElementById('registerConfirmPassword').value;
+    
+    if (password !== confirm) {
+        showNotification('Пароли не совпадают', 'error');
+        return;
     }
+    
+    // Тестовая регистрация
+    window.currentUser = {
+        id: 'user-' + Date.now(),
+        username: username,
+        email: email,
+        avatar_url: 'https://i.pravatar.cc/150?img=' + Math.floor(Math.random() * 70)
+    };
+    
+    document.getElementById('authSection').style.display = 'none';
+    document.getElementById('appContainer').style.display = 'flex';
+    
+    localStorage.setItem('demoUser', JSON.stringify(window.currentUser));
+    
+    showNotification('Регистрация успешна!', 'success');
+    initApp();
+}
 
-    async loadUserProfile(userId) {
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
-        
-        if (!error && data) {
-            this.currentUser = data;
-            this.updateUI();
-        }
+function showNotification(message, type) {
+    const toast = document.getElementById('notificationToast');
+    const messageEl = document.getElementById('toastMessage');
+    
+    if (!toast || !messageEl) {
+        console.log(message);
+        return;
     }
+    
+    messageEl.textContent = message;
+    toast.className = `notification-toast ${type}`;
+    toast.style.display = 'block';
+    
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 3000);
+}
 
-    // Аутентификация
-    async login(username, password) {
+function logout() {
+    window.currentUser = null;
+    localStorage.removeItem('demoUser');
+    
+    document.getElementById('appContainer').style.display = 'none';
+    document.getElementById('authSection').style.display = 'flex';
+    
+    showNotification('Выход выполнен', 'info');
+}
+
+function initApp() {
+    if (!window.currentUser) return;
+    
+    // Обновляем интерфейс
+    const usernameEl = document.getElementById('currentUsername');
+    const avatarEl = document.getElementById('currentAvatar');
+    
+    if (usernameEl) usernameEl.textContent = window.currentUser.username;
+    if (avatarEl) avatarEl.src = window.currentUser.avatar_url;
+    
+    // Прячем прелоадер
+    document.getElementById('preloader').style.display = 'none';
+    
+    console.log('App initialized for:', window.currentUser.username);
+}
+
+// Инициализация при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded');
+    
+    // Проверяем сохраненного пользователя
+    const savedUser = localStorage.getItem('demoUser');
+    if (savedUser) {
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: username.includes('@') ? username : `${username}@aqua.local`,
-                password: password
-            });
-
-            if (error) throw error;
-            
-            await this.loadUserProfile(data.user.id);
-            this.showApp();
-            this.showNotification('Вход выполнен успешно!', 'success');
-            
-        } catch (error) {
-            this.showNotification(error.message, 'error');
+            window.currentUser = JSON.parse(savedUser);
+            document.getElementById('preloader').style.display = 'none';
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'flex';
+            initApp();
+        } catch (e) {
+            console.error('Error parsing saved user:', e);
+            localStorage.removeItem('demoUser');
         }
+    } else {
+        // Показываем форму входа через 1 секунду
+        setTimeout(() => {
+            document.getElementById('preloader').style.display = 'none';
+            document.getElementById('authSection').style.display = 'flex';
+        }, 1000);
     }
-
-    async register(username, email, password) {
-        try {
-            const { data, error } = await supabase.auth.signUp({
-                email: email,
-                password: password,
-                options: {
-                    data: { username: username }
-                }
+    
+    // Вешаем обработчики
+    const loginBtn = document.querySelector('#loginForm button[type="submit"]');
+    const registerBtn = document.querySelector('#registerForm button[type="submit"]');
+    
+    if (loginBtn) {
+        loginBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            login();
+        });
+    }
+    
+    if (registerBtn) {
+        registerBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            register();
+        });
+    }
+    
+    // Обработчики табов
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tab = this.getAttribute('data-tab');
+            
+            // Обновляем активные табы
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Переключаем формы
+            document.querySelectorAll('.form-content').forEach(form => {
+                form.classList.remove('active');
             });
-
-            if (error) throw error;
             
-            this.showNotification('Регистрация успешна! Проверьте email.', 'success');
-            this.switchToLogin();
+            if (tab === 'login') {
+                document.getElementById('loginForm').classList.add('active');
+                document.getElementById('authTitle').textContent = 'Вход';
+            } else {
+                document.getElementById('registerForm').classList.add('active');
+                document.getElementById('authTitle').textContent = 'Регистрация';
+            }
+        });
+    });
+    
+    // Кнопки показа пароля
+    document.querySelectorAll('.show-password').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const inputId = this.getAttribute('data-input');
+            const input = document.getElementById(inputId);
+            const icon = this.querySelector('i');
             
-        } catch (error) {
-            this.showNotification(error.message, 'error');
-        }
-    }
-
-    async logout() {
-        await supabase.auth.signOut();
-        this.currentUser = null;
-        this.showAuth();
-    }
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        });
+    });
+});
 
     // Друзья
     async sendFriendRequest(toUserId) {
