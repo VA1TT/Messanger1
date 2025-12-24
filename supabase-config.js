@@ -1,9 +1,9 @@
-// Конфигурация Supabase
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+// Конфигурация Supabase - ЗАМЕНИТЕ НА СВОИ ДАННЫЕ!
+const SUPABASE_URL = 'https://frkmacxtiwbpnxmaofxq.supabase.co'; // Замените на ваш URL
+const SUPABASE_ANON_KEY = 'sb_publishable_rkaKOLf0E-2quUUztk84Fw_Y7esr1yJ'; // Замените на ваш ключ
 
 // Инициализация Supabase
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser = null;
 let selectedUser = null;
@@ -11,5 +11,7 @@ let peerConnection = null;
 let localStream = null;
 let remoteStream = null;
 
-// Замените эти значения на свои из Supabase Dashboard
-console.log('ВАЖНО: Замените SUPABASE_URL и SUPABASE_ANON_KEY в supabase-config.js на свои значения!');
+// Экспортируем переменные
+window.supabaseClient = supabase;
+window.currentUser = currentUser;
+window.selectedUser = selectedUser;
