@@ -1,91 +1,467 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Messenger</title>
+    <title>Aqua Messenger</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js" defer></script>
     <script src="app.js" defer></script>
+    <link rel="manifest" href="manifest.json">
 </head>
 <body>
-    <div class="container">
-        <div class="auth-section" id="authSection">
-            <h1>📱 Simple Messenger</h1>
-            <div class="auth-container" id="loginForm">
-                <h2 id="authTitle">Вход</h2>
-                
-                <div class="auth-error" id="authError" style="display: none;"></div>
-                
-                <div class="form-group">
-                    <label for="username">Имя пользователя</label>
-                    <input type="text" id="username" placeholder="Введите имя пользователя" required>
+    <!-- Preloader -->
+    <div class="preloader" id="preloader">
+        <div class="preloader-content">
+            <div class="liquid-loader">
+                <div class="liquid-drop"></div>
+                <div class="liquid-drop"></div>
+                <div class="liquid-drop"></div>
+                <div class="liquid-drop"></div>
+            </div>
+            <div class="preloader-text">Aqua Messenger</div>
+        </div>
+    </div>
+
+    <!-- Auth Section -->
+    <div class="auth-section" id="authSection">
+        <div class="auth-container">
+            <div class="glass-card auth-card">
+                <div class="logo-container">
+                    <div class="liquid-logo">
+                        <div class="liquid-wave"></div>
+                        <div class="liquid-wave"></div>
+                        <div class="liquid-wave"></div>
+                    </div>
+                    <h1 class="logo-text">Aqua Messenger</h1>
                 </div>
                 
-                <div class="form-group" id="emailGroup" style="display: none;">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" placeholder="Введите email">
-                    <small id="authNote" style="display: none; color: #666; margin-top: 5px;">
-                        Для регистрации требуется email
-                    </small>
+                <div class="auth-form" id="authForm">
+                    <div class="form-header">
+                        <h2 id="authTitle">Добро пожаловать</h2>
+                        <div class="auth-tabs">
+                            <button class="tab-btn active" data-tab="login">Вход</button>
+                            <button class="tab-btn" data-tab="register">Регистрация</button>
+                        </div>
+                    </div>
+                    
+                    <div class="error-message" id="authError"></div>
+                    
+                    <form id="loginForm" class="form-content active">
+                        <div class="input-group">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="loginUsername" placeholder="Имя пользователя или Email" required>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="loginPassword" placeholder="Пароль" required>
+                            <button type="button" class="show-password" data-input="loginPassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <button type="submit" class="btn-primary liquid-btn">
+                            <span>Войти</span>
+                        </button>
+                    </form>
+                    
+                    <form id="registerForm" class="form-content">
+                        <div class="input-group">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="registerUsername" placeholder="Имя пользователя" required>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="registerEmail" placeholder="Email" required>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="registerPassword" placeholder="Пароль" required>
+                            <button type="button" class="show-password" data-input="registerPassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="registerConfirmPassword" placeholder="Подтвердите пароль" required>
+                        </div>
+                        <button type="submit" class="btn-primary liquid-btn">
+                            <span>Зарегистрироваться</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="app-container" id="appContainer" style="display: none;">
+        <!-- Left Sidebar -->
+        <div class="left-sidebar" id="leftSidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar-small" id="userAvatarSmall">
+                    <img src="" alt="Avatar" id="currentAvatar">
+                    <div class="status-indicator online" id="statusIndicator"></div>
+                </div>
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <div class="sidebar-content" id="sidebarContent">
+                <nav class="main-nav">
+                    <a href="#" class="nav-item active" data-section="chats">
+                        <i class="fas fa-comments"></i>
+                        <span>Чаты</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="calls">
+                        <i class="fas fa-phone"></i>
+                        <span>Звонки</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="search">
+                        <i class="fas fa-search"></i>
+                        <span>Поиск</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="scroll">
+                        <i class="fas fa-play-circle"></i>
+                        <span>Scroll</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="friends">
+                        <i class="fas fa-user-friends"></i>
+                        <span>Друзья</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="settings">
+                        <i class="fas fa-cog"></i>
+                        <span>Настройки</span>
+                    </a>
+                </nav>
+                
+                <div class="friends-list-collapsed">
+                    <div class="friends-header">
+                        <h4>Друзья</h4>
+                    </div>
+                    <div class="friends-avatars" id="friendsAvatars">
+                        <!-- Аватарки друзей будут здесь -->
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label for="password">Пароль</label>
-                    <input type="password" id="password" placeholder="Введите пароль" required>
-                </div>
-                
-                <div class="auth-buttons">
-                    <button id="submitAuthBtn" class="btn-primary">Войти</button>
-                    <button id="toggleAuthBtn" class="btn-secondary">Нет аккаунта? Зарегистрироваться</button>
+                <div class="user-profile">
+                    <div class="user-info-expanded">
+                        <div class="user-avatar-large">
+                            <img src="" alt="Avatar" id="currentAvatarLarge">
+                            <button class="avatar-edit" id="avatarEditBtn">
+                                <i class="fas fa-camera"></i>
+                            </button>
+                        </div>
+                        <div class="user-details">
+                            <h4 id="currentUsername"></h4>
+                            <div class="status-selector" id="statusSelector">
+                                <span class="current-status" id="currentStatus">Онлайн</span>
+                                <div class="status-options">
+                                    <div class="status-option online" data-status="online">
+                                        <div class="status-dot"></div>
+                                        <span>Онлайн</span>
+                                    </div>
+                                    <div class="status-option dnd" data-status="dnd">
+                                        <div class="status-dot"></div>
+                                        <span>Не беспокоить</span>
+                                    </div>
+                                    <div class="status-option away" data-status="away">
+                                        <div class="status-dot"></div>
+                                        <span>Неактивен</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="main-section" id="mainSection" style="display: none;">
-            <div class="sidebar">
-                <div class="user-info">
-                    <h3>👤 <span id="currentUsername"></span></h3>
-                    <button onclick="logout()" class="btn-logout">Выйти</button>
-                </div>
-                <div class="users-list">
-                    <h3>🟢 Онлайн</h3>
-                    <ul id="onlineUsers"></ul>
-                </div>
-            </div>
-
-            <div class="chat-section">
-                <div class="chat-header">
-                    <h3 id="chatWithUser">Выберите пользователя для начала общения</h3>
-                    <div class="call-controls">
-                        <button id="callBtn" class="btn-call">📞 Позвонить</button>
-                        <button id="hangupBtn" class="btn-hangup" style="display: none;">📞 Завершить</button>
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Chats Section -->
+            <div class="content-section active" id="chatsSection">
+                <div class="chats-container">
+                    <div class="chats-sidebar">
+                        <div class="chats-header">
+                            <h2>Чаты</h2>
+                            <button class="btn-icon" id="newChatBtn">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Поиск чатов..." id="chatSearch">
+                        </div>
+                        <div class="chats-list" id="chatsList">
+                            <!-- Список чатов будет здесь -->
+                        </div>
+                    </div>
+                    <div class="chat-window">
+                        <div class="chat-header" id="chatHeader">
+                            <div class="chat-partner-info">
+                                <div class="partner-avatar">
+                                    <img src="" alt="" id="partnerAvatar">
+                                    <div class="partner-status" id="partnerStatus"></div>
+                                </div>
+                                <div class="partner-details">
+                                    <h3 id="partnerName">Выберите чат</h3>
+                                    <p id="partnerStatusText">...</p>
+                                </div>
+                            </div>
+                            <div class="chat-actions">
+                                <button class="btn-icon" id="videoCallBtn" title="Видеозвонок">
+                                    <i class="fas fa-video"></i>
+                                </button>
+                                <button class="btn-icon" id="voiceCallBtn" title="Голосовой звонок">
+                                    <i class="fas fa-phone"></i>
+                                </button>
+                                <div class="dropdown">
+                                    <button class="btn-icon" title="Еще">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a href="#" id="clearChatBtn"><i class="fas fa-trash"></i> Очистить чат</a>
+                                        <a href="#" id="changeWallpaperBtn"><i class="fas fa-image"></i> Обои чата</a>
+                                        <a href="#" id="chatSettingsBtn"><i class="fas fa-cog"></i> Настройки чата</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="messages-container" id="messagesContainer">
+                            <div class="chat-background" id="chatBackground"></div>
+                            <div class="messages" id="messages">
+                                <div class="welcome-message">
+                                    <div class="welcome-icon">
+                                        <i class="fas fa-comment-dots"></i>
+                                    </div>
+                                    <h3>Добро пожаловать в Aqua Messenger!</h3>
+                                    <p>Выберите чат для начала общения</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="message-input-container">
+                            <button class="btn-icon" id="attachFileBtn">
+                                <i class="fas fa-paperclip"></i>
+                            </button>
+                            <input type="file" id="fileInput" accept="image/*,video/*,.pdf,.doc,.docx,.txt" style="display: none;">
+                            <div class="message-input-wrapper">
+                                <input type="text" id="messageInput" placeholder="Введите сообщение..." disabled>
+                                <div class="input-actions">
+                                    <button class="btn-icon" id="emojiBtn">
+                                        <i class="far fa-smile"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button class="btn-primary send-btn" id="sendBtn" disabled>
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="chat-messages" id="chatMessages">
-                    <div class="welcome-message">
-                        <p>Выберите пользователя из списка слева, чтобы начать общение</p>
+            <!-- Calls Section -->
+            <div class="content-section" id="callsSection">
+                <div class="calls-container">
+                    <h2>История звонков</h2>
+                    <div class="calls-list" id="callsList">
+                        <!-- История звонков будет здесь -->
                     </div>
                 </div>
+            </div>
 
-                <div class="message-input">
-                    <input type="text" id="messageInput" placeholder="Введите сообщение..." disabled>
-                    <button id="sendBtn" class="btn-send" disabled>Отправить</button>
+            <!-- Search Section -->
+            <div class="content-section" id="searchSection">
+                <div class="search-container">
+                    <h2>Поиск</h2>
+                    <div class="global-search">
+                        <input type="text" placeholder="Поиск сообщений, пользователей, файлов..." id="globalSearch">
+                        <button class="btn-primary">
+                            <i class="fas fa-search"></i> Найти
+                        </button>
+                    </div>
+                    <div class="search-results" id="searchResults">
+                        <!-- Результаты поиска будут здесь -->
+                    </div>
                 </div>
             </div>
 
-            <div class="call-section" style="display: none;">
-                <div class="video-container">
-                    <video id="localVideo" autoplay muted playsinline></video>
-                    <video id="remoteVideo" autoplay playsinline></video>
-                </div>
-                <div class="call-controls">
-                    <button id="muteBtn" class="btn-control">🔇 Выключить звук</button>
-                    <button id="videoBtn" class="btn-control">📹 Выключить видео</button>
+            <!-- Scroll Section -->
+            <div class="content-section" id="scrollSection">
+                <div class="scroll-container">
+                    <div class="scroll-header">
+                        <h2>Scroll</h2>
+                        <button class="btn-primary" id="uploadVideoBtn">
+                            <i class="fas fa-upload"></i> Загрузить видео
+                        </button>
+                    </div>
+                    <input type="file" id="videoUploadInput" accept="video/*" style="display: none;">
+                    <div class="videos-grid" id="videosGrid">
+                        <!-- Видео будут здесь -->
+                    </div>
                 </div>
             </div>
+
+            <!-- Friends Section -->
+            <div class="content-section" id="friendsSection">
+                <div class="friends-container">
+                    <div class="friends-tabs">
+                        <button class="tab-btn active" data-friends-tab="all">Все друзья</button>
+                        <button class="tab-btn" data-friends-tab="online">Онлайн</button>
+                        <button class="tab-btn" data-friends-tab="pending">Запросы</button>
+                        <button class="tab-btn" data-friends-tab="suggestions">Предложения</button>
+                    </div>
+                    <div class="friends-list-expanded" id="friendsListExpanded">
+                        <!-- Расширенный список друзей будет здесь -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Section -->
+            <div class="content-section" id="settingsSection">
+                <div class="settings-container">
+                    <h2>Настройки</h2>
+                    <div class="settings-grid">
+                        <div class="settings-card">
+                            <h3><i class="fas fa-palette"></i> Внешний вид</h3>
+                            <div class="setting-item">
+                                <span>Тема</span>
+                                <select id="themeSelect">
+                                    <option value="dark">Темная</option>
+                                    <option value="light">Светлая</option>
+                                    <option value="auto">Авто</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <span>Обои чата</span>
+                                <button class="btn-secondary" id="selectWallpaperBtn">Выбрать обои</button>
+                            </div>
+                            <div class="setting-item">
+                                <span>Анимации</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="animationsToggle" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-card">
+                            <h3><i class="fas fa-user"></i> Профиль</h3>
+                            <div class="avatar-upload">
+                                <div class="avatar-preview" id="avatarPreview">
+                                    <img src="" alt="" id="previewAvatar">
+                                </div>
+                                <button class="btn-secondary" id="uploadAvatarBtn">Изменить аватар</button>
+                            </div>
+                            <div class="setting-item">
+                                <span>Имя пользователя</span>
+                                <input type="text" id="usernameInput" value="">
+                            </div>
+                        </div>
+                        
+                        <div class="settings-card">
+                            <h3><i class="fas fa-bell"></i> Уведомления</h3>
+                            <div class="setting-item">
+                                <span>Звуки сообщений</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="messageSoundsToggle" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span>Уведомления о звонках</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="callNotificationsToggle" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call Modal -->
+    <div class="call-modal" id="callModal" style="display: none;">
+        <div class="call-container glass-card">
+            <div class="call-header">
+                <h3>Инициализация звонка</h3>
+                <div class="call-loader">
+                    <div class="liquid-ring"></div>
+                </div>
+            </div>
+            <div class="call-info">
+                <p id="callPartnerName">Соединение с...</p>
+                <div class="call-timer" id="callTimer">00:00</div>
+            </div>
+            <div class="call-controls">
+                <button class="btn-call accept" id="acceptCallBtn">
+                    <i class="fas fa-phone"></i>
+                </button>
+                <button class="btn-call decline" id="declineCallBtn">
+                    <i class="fas fa-phone-slash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Call Interface -->
+    <div class="video-call-container" id="videoCallContainer" style="display: none;">
+        <video id="localVideo" autoplay muted playsinline></video>
+        <video id="remoteVideo" autoplay playsinline></video>
+        <div class="video-controls">
+            <button class="video-control-btn" id="videoToggleBtn">
+                <i class="fas fa-video"></i>
+            </button>
+            <button class="video-control-btn" id="audioToggleBtn">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <button class="video-control-btn end-call" id="endCallBtn">
+                <i class="fas fa-phone-slash"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Emoji Picker -->
+    <div class="emoji-picker" id="emojiPicker" style="display: none;">
+        <div class="emoji-categories">
+            <button class="emoji-category-btn active" data-category="smileys">😀</button>
+            <button class="emoji-category-btn" data-category="animals">🐻</button>
+            <button class="emoji-category-btn" data-category="food">🍕</button>
+        </div>
+        <div class="emoji-grid" id="emojiGrid">
+            <!-- Эмодзи будут здесь -->
+        </div>
+    </div>
+
+    <!-- File Upload Preview -->
+    <div class="file-preview-modal" id="filePreviewModal" style="display: none;">
+        <div class="file-preview-container glass-card">
+            <div class="file-preview-header">
+                <h3>Отправка файла</h3>
+                <button class="close-btn" id="closePreviewBtn">&times;</button>
+            </div>
+            <div class="file-preview-content" id="filePreviewContent">
+                <!-- Предпросмотр файла будет здесь -->
+            </div>
+            <div class="file-preview-actions">
+                <input type="text" id="fileCaption" placeholder="Добавьте подпись...">
+                <button class="btn-primary" id="sendFileBtn">Отправить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="notification-toast" id="notificationToast">
+        <div class="toast-content">
+            <i class="fas fa-bell"></i>
+            <div class="toast-message" id="toastMessage"></div>
         </div>
     </div>
 </body>
