@@ -113,7 +113,7 @@ input:checked+.slider:before{transform:translateX(30px)}
 <button class="btn glass" id="logoutBtn" style="margin-top:20px"><i class="fas fa-sign-out-alt"></i>Выйти</button></div></div></div></div>
 <script>
 "use strict";
-const MESSENGER_PASSWORD="DepthSend_2024_!Secure@Password#789";
+const MESSENGER_PASSWORD = "DepthSend!SPassword#721#";
 const SUPABASE_URL="https://frkmacxtiwbpnxmaofxq.supabase.co";
 const SUPABASE_KEY="sb_publishable_rkaKOLf0E-2quUUztk84Fw_Y7esr1yJ";
 let supabaseClient,currentUser=null,selectedFriend=null,messageCount=0,chatMessages=[];
@@ -124,13 +124,95 @@ initSupabase(){try{
 supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true}});
 console.log("Supabase инициализирован")}catch(e){console.error("Supabase error:",e)}}
 checkPassword(){
-const savedIP=localStorage.getItem("user_ip");
-const savedTime=localStorage.getItem("login_time");
-if(savedIP&&savedTime&&Date.now()-savedTime<86400000){
-document.getElementById("passwordScreen").classList.add("hidden");
-document.getElementById("appContainer").classList.remove("hidden");
-this.showNotification("Автоматический вход по IP")}else{
-document.getElementById("passwordScreen").classList.remove("hidden")}}
+    const savedIP = localStorage.getItem("user_ip");
+    const savedEmail = localStorage.getItem("user_email");
+    
+    // Автовход по IP всегда действует
+    if(savedIP){
+        document.getElementById("passwordScreen").classList.add("hidden");
+        document.getElementById("appContainer").classList.remove("hidden");
+        
+        // Проверяем сохраненный email
+        if(savedEmail){
+            currentUser = {
+                id: "user_" + savedEmail,
+                username: savedEmail.split("@")[0],
+                email: savedEmail
+            };
+        }else{
+            currentUser = {
+                id: "user_ip_" + this.getUserIP(),
+                username: "Гость",
+                email: ""
+            };
+        }
+        
+        this.updateUserUI();
+        this.showNotification("Автоматический вход по IP");
+    }else{
+        document.getElementById("passwordScreen").classList.remove("hidden");
+    }
+}
+
+  showEmailLogin(){
+    // Скрываем экран пароля
+    document.getElementById("passwordScreen").classList.add("hidden");
+    
+    // Создаем экран входа по email
+    const emailScreen = document.createElement("div");
+    emailScreen.id = "emailScreen";
+    emailScreen.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: var(--gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    `;
+    
+    emailScreen.innerHTML = `
+        <div class="glass" style="max-width: 400px; width: 90%; padding: 40px;">
+            <h1 style="text-align: center; margin-bottom: 30px; font-size: 2.2em; 
+                       background: linear-gradient(45deg, var(--accent), #e8eaf6);
+                       -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Ваш аккаунт
+            </h1>
+            <p style="text-align: center; margin-bottom: 30px; opacity: 0.9;">
+                Введите email для входа в аккаунт
+            </p>
+            <input type="email" id="emailInput" class="password-input glass" 
+                   placeholder="Ваш email" style="margin-bottom: 20px;">
+            <button id="emailSubmit" class="btn password-btn">Продолжить</button>
+            <button id="skipEmail" class="btn" style="margin-top: 15px; background: rgba(255,255,255,0.1);">
+                Пропустить (гостевой режим)
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(emailScreen);
+    
+    // Обработчики событий
+    document.getElementById("emailSubmit").addEventListener("click", () => {
+        this.loginWithEmail(document.getElementById("emailInput").value);
+    });
+    
+    document.getElementById("skipEmail").addEventListener("click", () => {
+        currentUser = {
+            id: "guest_" + this.getUserIP(),
+            username: "Гость",
+            email: ""
+        };
+        emailScreen.remove();
+        document.getElementById("appContainer").classList.remove("hidden");
+        this.updateUserUI();
+        this.showNotification("Вход в гостевом режиме", "info");
+    });
+    
+    document.getElementById("emailInput").addEventListener("keypress", (e) => {
+        if(e.key === "Enter") this.loginWithEmail(document.getElementById("emailInput").value);
+    });
+}
 setupEventListeners(){
 document.getElementById("passwordSubmit").addEventListener("click",()=>{this.checkPasswordInput()});
 document.getElementById("passwordInput").addEventListener("keypress",(e)=>{if(e.key==="Enter")this.checkPasswordInput()});
@@ -147,20 +229,40 @@ document.getElementById("avatarUpload").addEventListener("change",(e)=>{this.upl
 document.getElementById("userAvatar").addEventListener("click",()=>{document.getElementById("avatarUpload").click()});
 document.querySelectorAll(".menu-btn").forEach(btn=>{btn.addEventListener("click",(e)=>{this.switchSection(e.currentTarget.dataset.section)})});
 document.getElementById("themeToggle").addEventListener("change",(e)=>{this.toggleTheme(e.target.checked)});
+  // Добавь в самый конец setupEventListeners():
+document.getElementById("passwordInput").addEventListener("input", (e) => {
+    // Автоматически определяем что вводится
+    const value = e.target.value;
+    if(value.includes("@")) {
+        // Меняем placeholder если вводится email
+        e.target.placeholder = "Введите email для входа";
+    } else {
+        e.target.placeholder = "Введите пароль мессенджера";
+    }
+});
 window.addEventListener("resize",()=>{this.adjustTextarea(document.getElementById("messageInput"))})}
 checkPasswordInput(){
-const input=document.getElementById("passwordInput");
-if(input.value===MESSENGER_PASSWORD){
-localStorage.setItem("user_ip",this.getUserIP());
-localStorage.setItem("login_time",Date.now());
-document.getElementById("passwordScreen").classList.add("hidden");
-document.getElementById("appContainer").classList.remove("hidden");
-currentUser={id:"user_"+Date.now(),username:"Пользователь",email:""};
-this.updateUserUI();
-this.showNotification("Добро пожаловать!","success")}else{
-input.value="";
-this.showNotification("Неверный пароль","error")}}
-getUserIP(){return Math.random().toString(36).substr(2,9)}
+    const input = document.getElementById("passwordInput").value;
+    
+    // Проверка общего пароля мессенджера
+    if(input === MESSENGER_PASSWORD){
+        localStorage.setItem("user_ip", this.getUserIP());
+        localStorage.setItem("login_time", Date.now());
+        
+        // Показываем второй экран для входа по email
+        this.showEmailLogin();
+        return;
+    }
+    
+    // Если введен email (проверяем @)
+    if(input.includes("@")){
+        this.loginWithEmail(input);
+        return;
+    }
+    
+    input.value = "";
+    this.showNotification("Неверный пароль или email", "error");
+}
 searchUser(){
 const email=document.getElementById("userSearch").value.trim();
 if(!email.includes("@")){this.showNotification("Введите корректный email","error");return}
@@ -305,12 +407,22 @@ toggleTheme(dark){
 document.documentElement.setAttribute("data-theme",dark?"dark":"light");
 localStorage.setItem("theme",dark?"dark":"light")}
 logout(){
-localStorage.removeItem("user_ip");
-localStorage.removeItem("login_time");
-document.getElementById("appContainer").classList.add("hidden");
-document.getElementById("passwordScreen").classList.remove("hidden");
-document.getElementById("passwordInput").value="";
-this.showNotification("Выход выполнен","info")}
+    // Удаляем IP для выхода
+    localStorage.removeItem("user_ip");
+    localStorage.removeItem("login_time");
+    // Оставляем email для удобства
+    // localStorage.removeItem("user_email"); // раскомментируй если хочешь удалять email тоже
+    
+    document.getElementById("appContainer").classList.add("hidden");
+    
+    // Удаляем экран email если есть
+    const emailScreen = document.getElementById("emailScreen");
+    if(emailScreen) emailScreen.remove();
+    
+    document.getElementById("passwordScreen").classList.remove("hidden");
+    document.getElementById("passwordInput").value = "";
+    this.showNotification("Выход выполнен", "info");
+}
 adjustTextarea(textarea){
 textarea.style.height="auto";
 textarea.style.height=Math.min(textarea.scrollHeight,150)+"px"}
